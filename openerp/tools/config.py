@@ -162,7 +162,7 @@ class configmanager(object):
 
         # WEB
         group = optparse.OptionGroup(parser, "Web interface Configuration")
-        group.add_option("--db-filter", dest="dbfilter", my_default='^%d%',
+        group.add_option("--db-filter", dest="dbfilter", my_default='^%d$',
                          help="Filter listed database", metavar="REGEXP")
         parser.add_option_group(group)
 
