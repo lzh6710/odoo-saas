@@ -17,6 +17,8 @@ import openerp
 from openerp.addons.web import http
 from openerp.http import request, STATIC_CACHE
 from openerp.tools import image_save_for_web
+import ldap
+from ldap.filter import filter_format
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +28,87 @@ LOC_PER_SITEMAP = 45000
 SITEMAP_CACHE_TIME = datetime.timedelta(hours=12)
 
 class Website(openerp.addons.web.controllers.main.Home):
+
+
+    def connect(self, conf):
+        """
+        Connect to an LDAP server specified by an ldap
+        configuration dictionary.
+
+        :param dict conf: LDAP configuration
+        :return: an LDAP object
+        """
+
+        uri = 'ldap://%s:%d' % (conf['ldap_server'],
+                                conf['ldap_server_port'])
+
+        connection = ldap.initialize(uri)
+        if conf['ldap_tls']:
+            connection.start_tls_s()
+        return connection
+
+    def get_user_org_dn(self, conf, ldap_entry):
+        dn = False
+        uid = ldap_entry[1]['uid'][0] or False
+        ldap_base_for_org = 'dc=agrista,dc=com'
+        if uid:
+            filter = filter_format('uniquemember=uid=%s,ou=people,dc=agrista,dc=com', (uid,))
+            query_results = []
+            try:
+                conn = self.connect(conf)
+                conn.simple_bind_s(conf['ldap_binddn'] or '',
+                                   conf['ldap_password'] or '')
+                query_results = conn.search_st(ldap_base_for_org, ldap.SCOPE_SUBTREE,
+                                               filter, None, timeout=60)
+            except ldap.INVALID_CREDENTIALS:
+                logger.error('LDAP bind failed.')
+            except ldap.LDAPError, e:
+                logger.error('An LDAP exception occurred: %s', e)
+            if query_results and len(query_results) == 1:
+                dn = query_results[0][0]
+        return dn
+
     #------------------------------------------------------
     # View
     #------------------------------------------------------
     @http.route('/', type='http', auth="public", website=True)
     def index(self, **kw):
+        if request.session['uid']:
+            # get user role
+            if 'is_admin' not in request.session:
+                GET_USER_GROUP = 'SELECT * FROM res_groups_users_rel where gid=4 and uid=' + str(request.session['uid'])
+                cr = request.cr
+                cr.execute(GET_USER_GROUP)
+                admin_group_object = cr.fetchone()
+                if admin_group_object:
+                    request.session['is_admin'] = True
+            # get user's company domain
+            if 'company_domain' not in request.session:
+                GET_BASE_URL = "SELECT value FROM ir_config_parameter where key='web.base.url'"
+                cr = request.cr
+                cr.execute(GET_BASE_URL)
+                base_url = cr.fetchone()
+                if base_url:
+                    GET_LDAP_CONFIG = """
+                        SELECT id, company, ldap_server, ldap_server_port, ldap_binddn,
+                               ldap_password, ldap_filter, ldap_base, "user", create_user,
+                               ldap_tls
+                        FROM res_company_ldap
+                        WHERE ldap_server != ''"""
+                    ldap_obj = request.registry['res.company.ldap']
+                    ldap_login = request.session['login']
+                    ldap_password = request.session['password']
+                    cr = request.registry.cursor()
+                    cr.execute(GET_LDAP_CONFIG)
+                    ldap_conf_list = cr.dictfetchall()
+                    for conf in ldap_conf_list:
+                        entry = ldap_obj.authenticate(conf, ldap_login, ldap_password)
+                        if entry:
+                            dn = self.get_user_org_dn(conf, entry)
+                            company_domain = dn.split(",dc=")[1]
+                            if company_domain is not None and company_domain not in base_url:
+                                request.session['company_domain'] = company_domain
+
         page = 'homepage'
         try:
             main_menu = request.registry['ir.model.data'].get_object(request.cr, request.uid, 'website', 'main_menu')
@@ -367,7 +445,7 @@ class Website(openerp.addons.web.controllers.main.Home):
         obj = _object.browse(request.cr, request.uid, _id)
 
         values = {}
-        if 'website_published' in _object._fields:
+        if 'website_published' in _object._all_columns:
             values['website_published'] = not obj.website_published
         _object.write(request.cr, request.uid, [_id],
                       values, context=request.context)
@@ -465,4 +543,3 @@ class Website(openerp.addons.web.controllers.main.Home):
         if res:
             return res
         return request.redirect('/')
-

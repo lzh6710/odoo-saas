@@ -168,6 +168,37 @@ class CompanyLDAP(osv.osv):
                    'company_id': conf['company']
                    }
         return values
+
+    def get_company_name_by_dn(self,dn):
+        company_name = False
+        if dn and 'o=' in dn:
+            company_name = dn.split(",")[1][2:]
+        return company_name
+
+    def get_user_org_dn(self, conf, ldap_entry):
+        dn = False
+        uid = ldap_entry[1]['uid'][0] or False
+        ldap_base_for_org = 'dc=agrista,dc=com'
+        if uid:
+            filter = filter_format('uniquemember=uid=%s,ou=people,dc=agrista,dc=com', (uid,))
+            query_results = []
+            try:
+                conn = self.connect(conf)
+                conn.simple_bind_s(conf['ldap_binddn'] or '',
+                                   conf['ldap_password'] or '')
+                query_results = conn.search_st(ldap_base_for_org, ldap.SCOPE_SUBTREE,
+                                         filter, None, timeout=60)
+            except ldap.INVALID_CREDENTIALS:
+                _logger.error('LDAP bind failed.')
+            except ldap.LDAPError, e:
+                _logger.error('An LDAP exception occurred: %s', e)
+            if query_results and len(query_results) == 1:
+                dn = query_results[0][0]
+        return dn
+
+    def get_user_org_name(self, conf, ldap_entry):
+        dn = self.get_user_org_dn(conf, ldap_entry)
+        return self.get_company_name_by_dn(dn)
     
     def get_or_create_user(self, cr, uid, conf, login, ldap_entry,
                            context=None):
@@ -183,7 +214,15 @@ class CompanyLDAP(osv.osv):
         """
         
         user_id = False
+        company_id = False
         login = tools.ustr(login.lower().strip())
+        company_name = self.get_user_org_name(conf, ldap_entry)
+        if company_name:
+            cr.execute("SELECT id, active FROM res_partner WHERE lower(name)=%s", (company_name.lower(),))
+            res = cr.fetchone()
+            if res:
+                if res[1]:
+                    company_id = res[0]
         cr.execute("SELECT id, active FROM res_users WHERE lower(login)=%s", (login,))
         res = cr.fetchone()
         if res:
@@ -193,6 +232,19 @@ class CompanyLDAP(osv.osv):
             _logger.debug("Creating new Odoo user \"%s\" from LDAP" % login)
             user_obj = self.pool['res.users']
             values = self.map_ldap_attributes(cr, uid, conf, login, ldap_entry)
+            if company_id:
+                values['parent_id']= company_id
+            else:
+                # create company partner
+                company_obj = self.pool['res.partner']
+                company_values = {
+                    'name': company_name,
+                    'company_id': conf['company'],
+                    'is_company': True,
+                    'notify_email': 'always'
+                }
+                company_id = company_obj.create(cr, SUPERUSER_ID, company_values)
+                values['parent_id'] = company_id
             if conf['user']:
                 values['active'] = True
                 user_id = user_obj.copy(cr, SUPERUSER_ID, conf['user'],
