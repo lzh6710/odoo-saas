@@ -4,27 +4,8 @@
 <!-- Front-end/Back-end integration -->
 <template id="user_navbar" inherit_id="website.layout" groups="base.group_user">
 <xpath expr="//body/div['id=wrawrap']" position="before">
-<t t-if="website and menu_data">
+<t t-if="website and menu_data and request.session.get('is_admin')">
     <nav id="oe_main_menu_navbar" class="navbar navbar-inverse" role="navigation">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#oe_applications">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>    
-        </div>
-
-        <ul id="oe_applications" class="nav navbar-nav navbar-left navbar-collapse collapse">
-            <li class="dropdown active">
-                <a href="#" class="dropdown-toggle hidden-xs" data-toggle="dropdown"><i class="fa fa-th-large"></i> Website<b class="caret"/></a>
-                <ul class="dropdown-menu">
-                    <li t-foreach="menu_data['children']" t-as="menu">
-                        <t t-call="web.menu_link"/>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-
         <ul id="oe_editzone" class="nav navbar-nav hidden-xs" style="padding-left: 20px; display: none;" groups="base.group_website_publisher">
             <li><button type="button" data-action="edit" class="btn btn-primary btn-xs">Edit</button></li>
         </ul>

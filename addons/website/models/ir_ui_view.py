@@ -167,6 +167,23 @@ class view(osv.osv):
             if 'main_object' not in qcontext:
                 qcontext['main_object'] = view_obj
 
+            if qcontext['menu_data'] and 'company_domain' in request.session:
+                company_domain = request.session['company_domain']
+                qcontext['menu_data']['children'] = [
+                    {
+                        'name': 'Messaging',
+                        'url': 'http://' + str(company_domain) + '.agrista.local:8069/web'
+                    },
+                    {
+                        'name': 'Reporting',
+                        'url': 'http://' + str(company_domain) + '.agrista.local:8069/web'
+                    },
+                    {
+                        'name': 'Website',
+                        'url': 'http://' + str(company_domain) + '.agrista.local:8069'
+                    }
+                ]
+
             values = qcontext
 
         return super(view, self).render(cr, uid, id_or_xml_id, values=values, engine=engine, context=context)

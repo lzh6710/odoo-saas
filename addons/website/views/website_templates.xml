@@ -114,6 +114,23 @@
                                         <t t-call="website.submenu"/>
                                     </t>
                                     <li class="divider" t-ignore="true" t-if="website.user_id != user_id"/>
+                                    <t t-if="website and menu_data">
+                                        <li class="dropdown">
+                                            <a href="#" class="dropdown-toggle hidden-xs" data-toggle="dropdown"><i class="fa fa-th-large"></i> Website<b class="caret"/></a>
+                                            <ul class="dropdown-menu">
+                                                <li t-foreach="menu_data['children']" t-as="menu">
+                                                    <t t-if="request.session.get('company_domain')">
+                                                        <a t-att-href="menu.get('url')">
+                                                            <t t-esc="menu.get('name')"/>
+                                                        </a>
+                                                    </t>
+                                                    <t t-if="not request.session.get('company_domain')">
+                                                        <t t-call="web.menu_link"/>
+                                                    </t>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </t>
                                     <li class="dropdown" t-ignore="true" t-if="website.user_id != user_id">
                                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                             <b>
