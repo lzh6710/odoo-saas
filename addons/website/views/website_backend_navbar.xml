@@ -3,7 +3,7 @@
 <data>
 <!-- Front-end/Back-end integration -->
 <template id="user_navbar" inherit_id="website.layout" groups="base.group_user">
-<xpath expr="//body/div['id=wrawrap']" position="before">
+<xpath expr="//body/div['id=wrapwrap']" position="before">
 <t t-if="website and menu_data and request.session.get('is_admin')">
     <nav id="oe_main_menu_navbar" class="navbar navbar-inverse" role="navigation">
         <ul id="oe_editzone" class="nav navbar-nav hidden-xs" style="padding-left: 20px; display: none;" groups="base.group_website_publisher">
