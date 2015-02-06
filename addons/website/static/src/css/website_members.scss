@@ -1,0 +1,109 @@
+@import "../../../../theme_agrista/static/src/css/includes/global";
+
+body {
+  background-color: $lightgray-light;
+}
+
+#oe_main_menu_navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+}
+
+#user-navbar {
+  height: 46px;
+  li {
+    a {
+      margin-top: 1px;
+      padding-bottom: 10px;
+    }
+    i {
+      font-size: 23px;
+      float: left;
+      margin: 0 0 0 10px;
+      width: 23px;
+      height: 23px;
+    }
+    .menu-title {
+      padding-left: 4px;
+    }
+  }
+}
+
+#profile-canopy {
+  .profile-canopy-header {
+    position: relative;
+    height: 366px;
+    overflow: hidden;
+    #profile-canopy-header-bg {
+      position: absolute;
+      width: 100%;
+      top: 0;
+      bottom: 0;
+      background-position: 50% 0;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+  }
+  .profile-canopy-avatar {
+    bottom: -87px;
+    left: 10px;
+    position: absolute;
+    transition: bottom .3s;
+    z-index: 3;
+  }
+  .profile-avatar {
+    background: #fff;
+    border: 5px solid #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 1px rgba(136, 153, 166, 0.15);
+    height: 200px;
+    position: relative;
+    width: 200px;
+    img {
+      border-radius: 8px;
+      height: 100%;
+      min-height: 190px;
+      left: 0;
+      position: absolute;
+      top: 0;
+      width: 100%;
+    }
+  }
+  .navbar-default {
+    min-height: 60px;
+    height: 60px;
+    z-index: 10;
+    transition: bottom .3s;
+    & .navbar-nav {
+      margin-top: 20px;
+    }
+    & .navbar-nav > li > a,
+    & .navbar-nav > li > a:hover,
+    & .navbar-nav > li > a:focus {
+      padding-top: 0px;
+      padding-bottom: 16px;
+    }
+  }
+  &.affix {
+    position: fixed;
+    margin-top: -306px;
+    z-index: 10;
+    .profile-avatar {
+      height: 36px;
+      width: 36px;
+      img {
+        min-height: 36px;
+        min-width: 36px;
+      }
+    }
+    + main {
+      margin-top: 384px;
+    }
+    .profile-canopy-avatar {
+      height: 36px;
+    }
+  }
+}
