@@ -101,6 +101,7 @@ class Website(openerp.addons.web.controllers.main.Home):
                     cr = request.registry.cursor()
                     cr.execute(GET_LDAP_CONFIG)
                     ldap_conf_list = cr.dictfetchall()
+                    cr.close()
                     for conf in ldap_conf_list:
                         entry = ldap_obj.authenticate(conf, ldap_login, ldap_password)
                         if entry:
